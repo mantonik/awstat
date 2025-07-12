@@ -90,3 +90,15 @@ This document outlines the initial requirements for developing a portable log an
 
 * Scripts must be designed to run as cron jobs or on-demand by the `support` user (or equivalent).
 * All output must be web-accessible via the PHP interface.
+
+## Development Notes
+We already had some base for this project and we ware working on it. 
+Rebuild scripts in format 
+
+* generate awstats data and base reports, reports per month for api calls, this is most important report for analize - one script
+* init script - base on awstats_master_workflow.sh script - extract init and set it as awstats_init.sh, here build a db - I think separation of the tasks will be easier to makage tomorrow
+* script to extract data from awstats database and insert to sqllite db 
+* Desing php files for reports, 
+* primary index.php will have a refernce to each domain folder in htdocs folder, it can have also a links to key reports in that folder like current month for awstats, yearly summary, yearly server break ( this way it will be not too overhelming when we will have several URLs and logs in this reporting system)
+* second page is awstats_reprots.php?domain=domain.com - this page will show the list of all reports available in selected folder 
+* css, js - those put into js,css folder those are separate files, not include in php/html codes

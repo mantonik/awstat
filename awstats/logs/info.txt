@@ -1,0 +1,1 @@
+links to location where logs are or update configuration to refer to log folder directly

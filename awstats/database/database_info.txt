@@ -1,0 +1,1 @@
+database folder to store awstats sqllite db
