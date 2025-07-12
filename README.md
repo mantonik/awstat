@@ -145,3 +145,22 @@ Current tree of the folder structure
         ├── access-2025-07-03.log
         └── processed
 
+
+## Deploymnet to server script 
+
+yum install git
+useradd appawstats
+# clone repository
+git clone https://github.com/mantonik/awstat.git
+
+#move files to home folder 
+cp -r git_repo/awstat/awstats/* ${HOME}
+chmod 755 bin/*.sh
+
+
+mkdir git_repo
+cd git_repo
+wget https://github.com/mantonik/awstat/archive/refs/heads/main.zip
+unzip main.zip 
+
+https://devawstats.dmcloudarchitect.com/
