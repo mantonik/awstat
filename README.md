@@ -102,3 +102,94 @@ Rebuild scripts in format
 * primary index.php will have a refernce to each domain folder in htdocs folder, it can have also a links to key reports in that folder like current month for awstats, yearly summary, yearly server break ( this way it will be not too overhelming when we will have several URLs and logs in this reporting system)
 * second page is awstats_reprots.php?domain=domain.com - this page will show the list of all reports available in selected folder 
 * css, js - those put into js,css folder those are separate files, not include in php/html codes
+* once each log file is processed, move this to processed folder and compress with gz
+
+Current tree of the folder structure 
+
+/home/awstats$ tree
+.
+├── bin
+│   └── awstats.txt
+├── database
+│   └── database_info.txt
+├── etc
+│   ├── awstats.conf
+│   └── servers.conf
+├── htdocs
+│   └── htdocs.info
+└── logs
+    ├── info.txt
+    ├── logs-sample.tar.gz
+    ├── pnjt1sweb1
+    │   ├── access-2025-04-05.log
+    │   ├── access-2025-04-15.log
+    │   ├── access-2025-05-05.log
+    │   ├── access-2025-05-25.log
+    │   ├── access-2025-06-05.log
+    │   ├── access-2025-06-25.log
+    │   ├── access-2025-07-01.log
+    │   ├── access-2025-07-03.log
+    │   └── processed
+    └── pnjt1sweb2
+        ├── access-2025-04-05.log
+        ├── access-2025-04-15.log
+        ├── access-2025-04-25.log
+        ├── access-2025-05-05.log
+        ├── access-2025-05-15.log
+        ├── access-2025-05-25.log
+        ├── access-2025-06-05.log
+        ├── access-2025-06-15.log
+        ├── access-2025-06-25.log
+        ├── access-2025-07-01.log
+        ├── access-2025-07-02.log
+        ├── access-2025-07-03.log
+        └── processed
+
+
+
+Clarifying Questions
+
+Domain Structure: I see references to sbil-api.bos.njtransit.com in your scripts. Will you have multiple domains to track, or is this primarily for one domain with multiple servers?
+in htdocs folder lets have reports/DOMAIN folders 
+This way we will oraganize output reprots into respective folder structure 
+each domain will be configured in server.conf file as we have today 
+
+
+Log Format: Your sample shows a custom Apache log format with two IPs (load balancer + real client IP). Should we parse this specific format, or will AWStats handle the parsing?
+As we worked before log format is 4 - it is define in server.conf in knowledge, as we already worked on this topic this format is working for this specific logs 
+
+PHP Framework: Do you prefer plain PHP or would you like to use a lightweight framework? For simplicity, I assume plain PHP with minimal dependencies.
+use lightweight format to display the reprots structure and later report data, this is for internal use it should have some wow affect when we will present reports
+
+Database Schema: Should we keep the existing SQLite schema from your current scripts, or redesign it for better PHP integration?
+what is your preferences? if redesing will help and make it faster then yes. 
+I have option to use mysql as well, but for this I think using local sqlite should be enought 
+
+Report Frequency: How often will reports be generated? Real-time, hourly, daily, or on-demand only?
+first time I will process like 3 months of the data, I already processed this base on our current scripts and I have awstats files - in proudciton. when I deploy this I want to reprocess awstats reports, create db and process data for our new reports. then script will be running daily on new incoming files 
+
+
+Historical Data: Do you need to migrate existing AWStats data, or start fresh?
+we starting fresh - in proudction it I will reprocess existing awstats database - I don't want to reprocess logs again as it is taking over 6h to get those logs processed. 
+
+
+Questions for You
+
+Should we proceed with this architecture?
+architecture looks correct it is good to go 
+
+Do you prefer to start with Phase 1 (foundation) or would you like to see a complete working prototype first?
+lets do step by step this way it will be easier to work in this project ( before we did all at once, yes most of it was in working condition but I spend  a lot of time in additional troubleshoot and changes )
+
+Any specific PHP features or limitations I should consider?
+using latest php, no limitation, server is running nging with php, when we get upto this point we will need to make a config file for php - at that time I will provide sample of config which I am using in my dev envirement 
+
+Should the web interface be responsive/mobile-friendly?
+I think this may benefit tomorrow, right now I really need just on PC, but mayby tomorrow I can use this for mobile  too that make it responsive 
+
+Do you need any specific chart/visualization libraries
+mayby some graphs when we do comparation of the servers, 
+daily graphs of the selected request or multiple requests. 
+once we have some base data in db we need to think about reports and selection for user to display that data set
+
+
