@@ -150,11 +150,14 @@ Current tree of the folder structure
 
 yum install git
 useradd appawstats
+
 # clone repository
+cd ${HOME}/git_repo/
+rm -rf awstat
 git clone https://github.com/mantonik/awstat.git
 
 #move files to home folder 
-cp -r git_repo/awstat/awstats/* ${HOME}
+cp -r awstat/awstats/* ${HOME}
 chmod 755 bin/*.sh
 
 
