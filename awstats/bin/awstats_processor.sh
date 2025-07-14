@@ -2,15 +2,13 @@
 
 # AWStats Log Processor and Report Generator - Performance Optimized
 # File: bin/awstats_processor.sh
-# Version: 1.2.5
+# Version: 1.2.6
 # Purpose: High-performance log processing with parallel execution and batch operations
-# Changes: v1.2.5 - ELIMINATED ALL HARDCODED PATHS - now uses configuration file exclusively
-#                    Removed DEFAULT_AWSTATS_BIN, AWSTATS_DB_DIR, REPORTS_DIR hardcoded values
-#                    Added proper configuration loading via load_config.sh
+# Changes: v1.2.6 - FIXED syntax error in date comparison logic
+#                    FIXED BASE_DIR calculation for custom directory structures
 #                    All paths now dynamically loaded from servers.conf with proper fallbacks
-#                    Fixed undefined AWSTATS_DB_FILE variable
 
-VERSION="1.2.5"
+VERSION="1.2.6"
 SCRIPT_NAME="awstats_processor.sh"
 
 # Colors for output
@@ -80,6 +78,42 @@ fi
 MONTHS_TO_PROCESS=3  # Can be made configurable later
 
 # Performance monitoring functions
+# FIXED: Date comparison functions to prevent syntax errors
+date_is_less_equal() {
+    local date1="$1"
+    local date2="$2"
+    
+    # Convert dates to comparable format (YYYYMMDD)
+    local d1=$(date -d "$date1" +%Y%m%d 2>/dev/null || echo "99999999")
+    local d2=$(date -d "$date2" +%Y%m%d 2>/dev/null || echo "99999999")
+    
+    [[ "$d1" -le "$d2" ]]
+}
+
+add_months_to_date() {
+    local date_input="$1"
+    local months="${2:-1}"
+    
+    # Try GNU date first, then fallback methods
+    if date -d "$date_input +$months month" +%Y-%m-01 2>/dev/null; then
+        return 0
+    elif date -j -v+${months}m -f %Y-%m-%d "$date_input" +%Y-%m-01 2>/dev/null; then
+        return 0
+    else
+        # Manual calculation fallback
+        local year=$(echo "$date_input" | cut -d'-' -f1)
+        local month=$(echo "$date_input" | cut -d'-' -f2)
+        
+        month=$((10#$month + months))
+        while [[ $month -gt 12 ]]; do
+            month=$((month - 12))
+            year=$((year + 1))
+        done
+        
+        printf "%04d-%02d-01\n" "$year" "$month"
+    fi
+}
+
 show_progress() {
     local current="$1"
     local total="$2"
@@ -350,13 +384,19 @@ process_awstats() {
     local commands=()
     
     # Build list of processing commands
-    while [[ "$current_date" <= "$end_date" ]]; do
+    while date_is_less_equal "$current_date" "$end_date"; do
         local year_month=$(date -d "$current_date" +%Y%m 2>/dev/null || date -j -f %Y-%m-%d "$current_date" +%Y%m)
         local cmd="ulimit -v $((MEMORY_LIMIT_MB * 1024)); nice -n 10 perl '$AWSTATS_BIN' -config='${domain}-${server}' -update -month='$year_month' >/dev/null 2>&1"
         commands+=("$cmd")
         
-        # Move to next month
-        current_date=$(date -d "$current_date +1 month" +%Y-%m-01 2>/dev/null || date -j -v+1m -f %Y-%m-%d "$current_date" +%Y-%m-01)
+        # Move to next month using safe function
+        current_date=$(add_months_to_date "$current_date" 1)
+        
+        # Safety check
+        if [[ -z "$current_date" ]]; then
+            print_color "$RED" "ERROR: Failed to calculate next month date"
+            break
+        fi
     done
     
     # Execute in parallel
@@ -748,12 +788,18 @@ process_all() {
             # Step 3: Extract to SQLite
             show_progress "$((++completed_operations))" "$total_operations" "Extracting to SQLite"
             local current_date="$start_date"
-            while [[ "$current_date" <= "$end_date" ]]; do
+            while date_is_less_equal "$current_date" "$end_date"; do
                 local year_month=$(date -d "$current_date" +%Y%m 2>/dev/null || date -j -f %Y-%m-%d "$current_date" +%Y%m)
                 extract_awstats_to_sqlite "$domain" "$server" "$year_month"
                 
-                # Move to next month
-                current_date=$(date -d "$current_date +1 month" +%Y-%m-01 2>/dev/null || date -j -v+1m -f %Y-%m-%d "$current_date" +%Y-%m-01)
+                # Move to next month using the safe function
+                current_date=$(add_months_to_date "$current_date" 1)
+                
+                # Safety check to prevent infinite loops
+                if [[ -z "$current_date" ]]; then
+                    print_color "$RED" "ERROR: Failed to calculate next month date"
+                    break
+                fi
             done
             
             # Generate reports
@@ -935,10 +981,16 @@ main() {
             process_awstats "$TARGET_DOMAIN" "$TARGET_SERVER" "awstats.${TARGET_DOMAIN}-${TARGET_SERVER}.conf" "$start_date" "$end_date"
             
             local current_date="$start_date"
-            while [[ "$current_date" <= "$end_date" ]]; do
+            while date_is_less_equal "$current_date" "$end_date"; do
                 local year_month=$(date -d "$current_date" +%Y%m 2>/dev/null || date -j -f %Y-%m-%d "$current_date" +%Y%m)
                 extract_awstats_to_sqlite "$TARGET_DOMAIN" "$TARGET_SERVER" "$year_month"
-                current_date=$(date -d "$current_date +1 month" +%Y-%m-01 2>/dev/null || date -j -v+1m -f %Y-%m-%d "$current_date" +%Y-%m-01)
+                current_date=$(add_months_to_date "$current_date" 1)
+                
+                # Safety check
+                if [[ -z "$current_date" ]]; then
+                    print_color "$RED" "ERROR: Failed to calculate next month date"
+                    break
+                fi
             done
             
             generate_reports "$TARGET_DOMAIN" "$TARGET_SERVER"
