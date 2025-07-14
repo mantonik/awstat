@@ -9,6 +9,8 @@ rm -rf ${HOME}/docs
 mkdir $HOME/install
 cd $HOME/install
 
+rm -rf awstats
+
 git clone https://github.com/mantonik/awstat.git
 
 cp -Rf awstat/awstats/* $HOME/
