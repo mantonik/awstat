@@ -580,7 +580,7 @@ validate_config() {
             done
             
             if [[ "$is_referenced" == false ]]; then
-                print_color "$YELLOW" "⚠️  Orphaned server section: [$section] (not referenced by any domain)"
+                print_color "$YELLOW" "⚠️  Orphaned server section: [$section] - not referenced by any domain"
                 ((warnings++))
             fi
         fi
