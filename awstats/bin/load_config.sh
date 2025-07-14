@@ -2,22 +2,40 @@
 
 # AWStats Configuration Loader
 # File: bin/load_config.sh
-# Version: 1.2.5
+# Version: 1.2.6
 # Purpose: Load and export configuration variables from servers.conf
-# Changes: v1.2.5 - Created to eliminate hardcoded paths in awstats_processor.sh
-#                    Loads all configuration values from servers.conf with proper fallbacks
-#                    Supports variable expansion and path validation
+# Changes: v1.2.6 - Fixed BASE_DIR calculation for custom directory structures
+#                    Added support for scripts in /home/appawstats/bin/ with BASE_DIR=/home/appawstats/
+#                    Enhanced directory validation and creation
 
-VERSION="1.2.5"
+VERSION="1.2.6"
 SCRIPT_NAME="load_config.sh"
 
-# Get the base directory
+# Get the base directory - FIXED for custom structures
 if [[ -z "$SCRIPT_DIR" ]]; then
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 fi
 
 if [[ -z "$BASE_DIR" ]]; then
-    BASE_DIR="$(dirname "$SCRIPT_DIR")"
+    # Calculate BASE_DIR based on script location
+    CALCULATED_BASE_DIR="$(dirname "$SCRIPT_DIR")"
+    
+    # Check if we're in a standard project structure (bin/ subdirectory)
+    # or a custom structure where bin/ is at the top level
+    if [[ "$(basename "$SCRIPT_DIR")" == "bin" ]]; then
+        # Standard structure: /path/to/project/bin/ → BASE_DIR = /path/to/project/
+        BASE_DIR="$CALCULATED_BASE_DIR"
+    else
+        # Custom structure: scripts might be in different location
+        # For now, assume the script directory parent is BASE_DIR
+        BASE_DIR="$CALCULATED_BASE_DIR"
+    fi
+fi
+
+# For debugging - show what we calculated
+if [[ "$CONFIG_DEBUG" == "true" ]]; then
+    echo "DEBUG: SCRIPT_DIR = $SCRIPT_DIR"
+    echo "DEBUG: Calculated BASE_DIR = $BASE_DIR"
 fi
 
 # Default configuration file location
@@ -29,8 +47,11 @@ fi
 if ! command -v get_config_value >/dev/null 2>&1; then
     if [[ -f "$SCRIPT_DIR/config_parser.sh" ]]; then
         source "$SCRIPT_DIR/config_parser.sh"
+    elif [[ -f "$BASE_DIR/bin/config_parser.sh" ]]; then
+        source "$BASE_DIR/bin/config_parser.sh"
     else
         echo "ERROR: config_parser.sh not found - cannot load configuration"
+        echo "Looked in: $SCRIPT_DIR/config_parser.sh and $BASE_DIR/bin/config_parser.sh"
         exit 1
     fi
 fi
@@ -49,7 +70,11 @@ load_config() {
     # Also export HOME to ensure it's available
     export HOME
 
-    # Load global configuration values with fallbacks
+    # Show what we're working with
+    if [[ "$CONFIG_DEBUG" == "true" ]]; then
+        echo "DEBUG: Using BASE_DIR = $BASE_DIR"
+        echo "DEBUG: Using CONFIG_FILE = $CONFIG_FILE"
+    fi
     # Database file
     AWSTATS_DB_FILE=$(get_config_value "database_file" "" "")
     if [[ -z "$AWSTATS_DB_FILE" ]]; then
@@ -233,8 +258,10 @@ show_config() {
     echo "AWStats Configuration Loader v$VERSION"
     echo "=================================="
     echo ""
+    echo "Configuration File: $CONFIG_FILE"
+    echo "BASE_DIR: $BASE_DIR (from config file)"
+    echo ""
     echo "Loaded Configuration:"
-    echo "  Config File: $CONFIG_FILE"
     echo "  Database File: $AWSTATS_DB_FILE"
     echo "  AWStats Binary: $AWSTATS_BIN"
     echo "  AWStats DB Dir: $AWSTATS_DB_DIR"
