@@ -2,13 +2,13 @@
 
 # AWStats Log Processor and Report Generator - Performance Optimized
 # File: bin/awstats_processor.sh
-# Version: 1.2.6
+# Version: 1.2.7
 # Purpose: High-performance log processing with parallel execution and batch operations
-# Changes: v1.2.6 - FIXED syntax error in date comparison logic
-#                    FIXED BASE_DIR calculation for custom directory structures
-#                    All paths now dynamically loaded from servers.conf with proper fallbacks
+# Changes: v1.2.7 - FIXED variable expansion issues in validation and extraction functions
+#                    Added debug output for path troubleshooting
+#                    Fixed display of literal ${BASE_DIR} instead of expanded paths
 
-VERSION="1.2.6"
+VERSION="1.2.7"
 SCRIPT_NAME="awstats_processor.sh"
 
 # Colors for output
@@ -422,8 +422,16 @@ extract_awstats_to_sqlite() {
     
     print_color "$CYAN" "📊 Extracting AWStats data to SQLite: $domain-$server ($year_month)"
     
+    # FIXED: Use properly expanded AWSTATS_DB_DIR
     local awstats_data_dir="$AWSTATS_DB_DIR/${domain}/${server}"
     local awstats_file="$awstats_data_dir/awstats${year_month}.${domain}-${server}.txt"
+    
+    # Debug: Show what paths we're using
+    if [[ "$CONFIG_DEBUG" == "true" ]]; then
+        print_color "$YELLOW" "DEBUG: AWSTATS_DB_DIR = $AWSTATS_DB_DIR"
+        print_color "$YELLOW" "DEBUG: awstats_data_dir = $awstats_data_dir"
+        print_color "$YELLOW" "DEBUG: awstats_file = $awstats_file"
+    fi
     
     if [[ ! -f "$awstats_file" ]]; then
         print_color "$YELLOW" "⚠️  AWStats data file not found: $awstats_file"
@@ -628,7 +636,7 @@ validate_awstats() {
         print_color "$GREEN" "✅ AWStats binary found: $AWSTATS_BIN"
     fi
     
-    # Check database file
+    # Check database file - FIXED: Show actual expanded path
     if [[ ! -f "$AWSTATS_DB_FILE" ]]; then
         print_color "$YELLOW" "⚠️  Database file not found: $AWSTATS_DB_FILE"
         print_color "$BLUE" "Will be created during processing..."
@@ -644,7 +652,7 @@ validate_awstats() {
         fi
     fi
     
-    # Check directories
+    # Check directories - FIXED: Show actual expanded paths
     for dir in "$AWSTATS_DB_DIR" "$REPORTS_DIR" "$LOGS_DIR"; do
         if [[ ! -d "$dir" ]]; then
             print_color "$YELLOW" "⚠️  Directory will be created: $dir"

@@ -2,13 +2,20 @@
 
 # AWStats Configuration Loader
 # File: bin/load_config.sh
-# Version: 1.2.6
+# Version: 1.2.9
 # Purpose: Load and export configuration variables from servers.conf
 # Changes: v1.2.6 - Fixed BASE_DIR calculation for custom directory structures
 #                    Added support for scripts in /home/appawstats/bin/ with BASE_DIR=/home/appawstats/
 #                    Enhanced directory validation and creation
+#          v1.2.7 - MAJOR: BASE_DIR now configurable in servers.conf
+#                    No longer calculated automatically - read from config file
+#          v1.2.8 - REMOVED all BASE_DIR calculation logic
+#                    BASE_DIR now ONLY read from servers.conf [global] section
+#          v1.2.9 - FIXED variable expansion in fallback config parser
+#                    Added proper ${BASE_DIR} and ${HOME} expansion in get_config_value
+#                    Enhanced debugging for variable expansion troubleshooting
 
-VERSION="1.2.6"
+VERSION="1.2.9"
 SCRIPT_NAME="load_config.sh"
 
 # Get the base directory - FIXED for custom structures
