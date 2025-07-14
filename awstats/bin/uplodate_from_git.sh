@@ -7,9 +7,9 @@ rm -rf ${HOME}/database
 rm -rf ${HOME}/docs
 
 mkdir $HOME/install
-cd $HOME/install
+#cd $HOME/install
 
-rm -rf awstats
+rm -rf awstat
 
 git clone https://github.com/mantonik/awstat.git
 
